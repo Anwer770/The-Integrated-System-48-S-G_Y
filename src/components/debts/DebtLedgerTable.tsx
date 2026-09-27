@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Pagination } from '../common/Pagination';
 import { DebtVoucherModal } from './DebtVoucherModal';
+import { DeleteConfirmModal } from '../common/DeleteConfirmModal';
 
 interface DebtLedgerTableProps {
   records: DebtRecord[];
@@ -59,6 +60,7 @@ export const DebtLedgerTable: React.FC<DebtLedgerTableProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
   const [printingRecord, setPrintingRecord] = useState<DebtRecord | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<DebtRecord | null>(null);
 
   // Filter records belonging to active book
   const bookRecords = useMemo(() => {
@@ -481,36 +483,14 @@ export const DebtLedgerTable: React.FC<DebtLedgerTableProps> = ({
                         </button>
                       </div>
 
-                      {deleteConfirmId === record.id ? (
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onDeleteRecord(record.id);
-                              setDeleteConfirmId(null);
-                            }}
-                            className="px-2 py-0.5 bg-rose-600 text-white rounded-md text-[10px] font-bold"
-                          >
-                            حذف
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirmId(null)}
-                            className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md text-[10px]"
-                          >
-                            إلغاء
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmId(record.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                          title="حذف القيد"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setDeletingRecord(record)}
+                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                        title="حذف القيد"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -700,33 +680,13 @@ export const DebtLedgerTable: React.FC<DebtLedgerTableProps> = ({
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
 
-                          {deleteConfirmId === record.id ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  onDeleteRecord(record.id);
-                                  setDeleteConfirmId(null);
-                                }}
-                                className="px-1.5 py-0.5 bg-rose-600 text-white rounded-md text-[10px] font-bold"
-                              >
-                                حذف
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirmId(null)}
-                                className="px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded-md text-[10px]"
-                              >
-                                لا
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setDeleteConfirmId(record.id)}
-                              title="حذف السجل"
-                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setDeletingRecord(record)}
+                            title="حذف السجل"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -790,6 +750,22 @@ export const DebtLedgerTable: React.FC<DebtLedgerTableProps> = ({
           setPrintingRecord(null);
           onEditRecord(r);
         }}
+      />
+
+      {/* Delete Confirmation Modal for Debt Record */}
+      <DeleteConfirmModal
+        isOpen={!!deletingRecord}
+        onClose={() => setDeletingRecord(null)}
+        onConfirm={() => {
+          if (deletingRecord) {
+            onDeleteRecord(deletingRecord.id);
+            setDeletingRecord(null);
+          }
+        }}
+        title="تأكيد حذف قيد الدين"
+        message="هل أنت متأكد من حذف هذا القيد نهائياً من دفتر الديون؟ سيتم تحديث الأرصدة التراكمية تلقائياً."
+        itemTitle={deletingRecord ? `${deletingRecord.name} — ${(deletingRecord.debit || deletingRecord.credit || 0).toLocaleString()} ${deletingRecord.currency || 'YER'}` : ''}
+        confirmLabel="حذف القيد"
       />
     </div>
   );

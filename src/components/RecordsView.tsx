@@ -33,6 +33,7 @@ import {
 } from '../utils/formatters';
 import { exportRecordsToCSV, exportRecordsToExcel } from '../utils/excel';
 import { Pagination } from './common/Pagination';
+import { DeleteConfirmModal } from './common/DeleteConfirmModal';
 
 interface RecordsViewProps {
   records: MovementRecord[];
@@ -79,6 +80,8 @@ export const RecordsView: React.FC<RecordsViewProps> = ({
   // Multi-selection state
   const [selectedSubIds, setSelectedSubIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [deletingRecord, setDeletingRecord] = useState<MovementRecord | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
 
   // Unique beneficiaries for filter dropdown
   const uniqueBeneficiaries = useMemo(() => {
@@ -243,16 +246,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({
             {/* Bulk delete action if items selected */}
             {selectedSubIds.length > 0 && (
               <button
-                onClick={() => {
-                  if (
-                    confirm(
-                      `هل أنت متأكد من حذف ${selectedSubIds.length} حركة محددة نهائياً؟`
-                    )
-                  ) {
-                    onBulkDelete(selectedSubIds);
-                    setSelectedSubIds([]);
-                  }
-                }}
+                onClick={() => setIsBulkDeleting(true)}
                 className="flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -666,7 +660,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => onDeleteRecord(r)}
+                          onClick={() => setDeletingRecord(r)}
                           className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
                           title="حذف الحركة"
                         >
@@ -900,7 +894,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({
                           </button>
 
                           <button
-                            onClick={() => onDeleteRecord(r)}
+                            onClick={() => setDeletingRecord(r)}
                             className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                             title="حذف الحركة"
                           >
@@ -931,6 +925,37 @@ export const RecordsView: React.FC<RecordsViewProps> = ({
           itemLabel="حركة مخزنية"
         />
       </div>
+
+      {/* Delete Confirmation Modal for Single Record */}
+      <DeleteConfirmModal
+        isOpen={!!deletingRecord}
+        onClose={() => setDeletingRecord(null)}
+        onConfirm={() => {
+          if (deletingRecord) {
+            onDeleteRecord(deletingRecord);
+            setDeletingRecord(null);
+          }
+        }}
+        title="تأكيد حذف حركة المخزون"
+        message="هل أنت متأكد من حذف هذه الحركة المخزنية نهائياً؟ سيتم إعادة احتساب أرصدة الأصناف المتأثرة تلقائياً."
+        itemTitle={deletingRecord ? `${deletingRecord.subId} (${deletingRecord.movementType}) — ${deletingRecord.beneficiary}` : ''}
+        confirmLabel="حذف الحركة"
+      />
+
+      {/* Delete Confirmation Modal for Bulk Delete */}
+      <DeleteConfirmModal
+        isOpen={isBulkDeleting}
+        onClose={() => setIsBulkDeleting(false)}
+        onConfirm={() => {
+          onBulkDelete(selectedSubIds);
+          setSelectedSubIds([]);
+          setIsBulkDeleting(false);
+        }}
+        title="تأكيد حذف الحركات المحددة"
+        message={`هل أنت متأكد من حذف ${selectedSubIds.length} حركة مخزنية محددة نهائياً؟`}
+        itemTitle={`تم تحديد ${selectedSubIds.length} حركة للحذف`}
+        confirmLabel={`حذف ${selectedSubIds.length} حركة`}
+      />
     </div>
   );
 };

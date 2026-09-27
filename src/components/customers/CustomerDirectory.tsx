@@ -15,6 +15,7 @@ import {
 } from '../../data/defaultCustomers';
 import { filterCustomersList, isCustomerVisitDueToday } from '../../utils/customers';
 import { Pagination } from '../common/Pagination';
+import { DeleteConfirmModal } from '../common/DeleteConfirmModal';
 import {
   Search,
   Filter,
@@ -69,6 +70,7 @@ export const CustomerDirectory: React.FC<Props> = ({
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
 
   const [filters, setFilters] = useState<CustomerFilterState>({
     search: '',
@@ -610,7 +612,7 @@ export const CustomerDirectory: React.FC<Props> = ({
                               <Edit className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => onDeleteCustomer(c.id)}
+                              onClick={() => setDeletingCustomer(c)}
                               title="حذف"
                               className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
                             >
@@ -728,8 +730,16 @@ export const CustomerDirectory: React.FC<Props> = ({
                     <button
                       onClick={() => onEditCustomer(c)}
                       className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors cursor-pointer"
+                      title="تعديل العميل"
                     >
                       <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingCustomer(c)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="حذف العميل"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -753,6 +763,22 @@ export const CustomerDirectory: React.FC<Props> = ({
           />
         </div>
       )}
+
+      {/* Delete Confirmation Modal for Customer */}
+      <DeleteConfirmModal
+        isOpen={!!deletingCustomer}
+        onClose={() => setDeletingCustomer(null)}
+        onConfirm={() => {
+          if (deletingCustomer) {
+            onDeleteCustomer(deletingCustomer.id);
+            setDeletingCustomer(null);
+          }
+        }}
+        title="تأكيد حذف العميل"
+        message="هل أنت متأكد من حذف هذا العميل من المنظومة؟ سيتم حذف بيانات الاتصال والزيارات المرتبطة به."
+        itemTitle={deletingCustomer ? `${deletingCustomer.name} (${deletingCustomer.region || 'المنطقة غير محددة'})` : ''}
+        confirmLabel="حذف العميل"
+      />
     </div>
   );
 };

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { PWAInstallButton } from './pwa/PWAInstallButton';
+import { GlobalSearchModal } from './common/GlobalSearchModal';
 
 interface HeaderProps {
   activeTab: ActiveModuleTab;
@@ -120,6 +121,20 @@ export const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
   }, []);
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Global Ctrl+K / Cmd+K shortcut listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   const todayArabic = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
     weekday: 'long',
     day: 'numeric',
@@ -154,16 +169,21 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Search Bar matching Nova ERP layout */}
-        <div className="flex-1 max-w-md mx-2 lg:mx-6 hidden sm:block">
-          <div className="relative flex items-center">
-            <input
-              type="text"
-              placeholder="بحث سريع في الصفحة الحالية... (Ctrl+K)"
-              className="w-full bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl pr-4 pl-9 py-2 text-xs text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all shadow-2xs"
-            />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-          </div>
+        {/* Center: Global Search Bar */}
+        <div className="flex-1 max-w-md mx-2 lg:mx-6">
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="w-full flex items-center justify-between bg-slate-50/90 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-400 focus:outline-none transition-all shadow-2xs cursor-pointer group"
+          >
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200">
+              <Search className="w-4 h-4 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+              <span className="truncate">بحث شامل في كافة أقسام المنظومة...</span>
+            </div>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-bold bg-white dark:bg-slate-900 text-slate-500 rounded border border-slate-200 dark:border-slate-700 shadow-2xs">
+              Ctrl+K
+            </kbd>
+          </button>
         </div>
 
         {/* Left side: User Pill + Notification Bell + Theme Toggle */}
@@ -240,6 +260,16 @@ export const Header: React.FC<HeaderProps> = ({
           <PWAInstallButton compact />
         </div>
       </div>
+
+      {/* Global Search Dialog Modal (Ctrl+K) */}
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onNavigate={(tab) => {
+          setActiveTab(tab);
+          setIsSearchOpen(false);
+        }}
+      />
     </header>
   );
 };

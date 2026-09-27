@@ -42,6 +42,7 @@ import {
 import { getMovementBadgeStyle, getImportanceBadgeStyle } from '../../data/defaultFinancial';
 import { FinancialPrintModal } from './FinancialPrintModal';
 import { Pagination } from '../common/Pagination';
+import { DeleteConfirmModal } from '../common/DeleteConfirmModal';
 
 interface Props {
   transactions: FinancialTransaction[];
@@ -78,6 +79,7 @@ export const FinancialModule: React.FC<Props> = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingTxn, setEditingTxn] = useState<FinancialTransaction | null>(null);
   const [viewingTxn, setViewingTxn] = useState<FinancialTransaction | null>(null);
+  const [deletingTxn, setDeletingTxn] = useState<FinancialTransaction | null>(null);
 
   // Table UX: Active Row tracking & Multiple Row Selection
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
@@ -1135,9 +1137,7 @@ export const FinancialModule: React.FC<Props> = ({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (window.confirm(`هل أنت متأكد من حذف القيد ${txn.id}؟`)) {
-                                onDeleteTransaction(txn.id);
-                              }
+                              setDeletingTxn(txn);
                             }}
                             className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg cursor-pointer transition-colors"
                             title="حذف القيد"
@@ -1401,11 +1401,7 @@ export const FinancialModule: React.FC<Props> = ({
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => {
-                                  if (window.confirm(`هل أنت متأكد من حذف القيد ${txn.id}؟`)) {
-                                    onDeleteTransaction(txn.id);
-                                  }
-                                }}
+                                onClick={() => setDeletingTxn(txn)}
                                 title="حذف القيد"
                                 className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-md transition-colors cursor-pointer"
                               >
@@ -1818,6 +1814,22 @@ export const FinancialModule: React.FC<Props> = ({
         transactions={filteredTransactions}
         periodSummary={periodSummary}
         periodLabel={filters.periodFilter === 'all' ? 'جميع الفترات' : periodLabel}
+      />
+
+      {/* Delete Confirmation Modal for Financial Transactions */}
+      <DeleteConfirmModal
+        isOpen={!!deletingTxn}
+        onClose={() => setDeletingTxn(null)}
+        onConfirm={() => {
+          if (deletingTxn) {
+            onDeleteTransaction(deletingTxn.id);
+            setDeletingTxn(null);
+          }
+        }}
+        title="تأكيد حذف القيد المالي"
+        message="هل أنت متأكد من حذف هذا القيد المالي نهائياً؟ سيتم توثيق عملية الحذف في سجل التدقيق المالي."
+        itemTitle={deletingTxn ? `${deletingTxn.id} — ${deletingTxn.accountName} (${(deletingTxn.amountYER || 0).toLocaleString()} YER)` : ''}
+        confirmLabel="حذف القيد"
       />
     </div>
   );
